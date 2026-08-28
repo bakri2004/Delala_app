@@ -1,0 +1,6 @@
+{
+  "name": "دلالة - Dallala",
+  "description": "منصة دلالة لبيع وشراء السيارات ومركبات النقل في السودان بسهولة وأمان مباشرة من الناس",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
