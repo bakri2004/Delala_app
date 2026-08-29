@@ -2,7 +2,7 @@ import { VehicleListing } from '../types';
 
 export const INITIAL_LISTINGS: VehicleListing[] = [
   {
-    id: 'sd-car-01',
+    id: '1ba43e79-90a9-4150-ba53-c68eda70665f',
     title: 'تويوتا كورولا 2018 فل كامل',
     titleEn: 'Toyota Corolla 2018 Full Option',
     make: 'تويوتا',
@@ -40,7 +40,7 @@ export const INITIAL_LISTINGS: VehicleListing[] = [
     viewsCount: 142
   },
   {
-    id: 'sd-car-02',
+    id: '44de5dee-dfb4-43f3-a8bc-7b9480d61b12',
     title: 'هيونداي أكسنت (دبدوب) 2016',
     titleEn: 'Hyundai Accent 2016 (Dabdoub)',
     make: 'هيونداي',
@@ -77,7 +77,7 @@ export const INITIAL_LISTINGS: VehicleListing[] = [
     viewsCount: 289
   },
   {
-    id: 'sd-car-03',
+    id: '47335089-2fd5-46ab-aa57-0fd31092eee1',
     title: 'هيونداي H100 شريحة ركاب 2015',
     titleEn: 'Hyundai H100 Passenger Minibus 2015',
     make: 'هيونداي',
@@ -114,7 +114,7 @@ export const INITIAL_LISTINGS: VehicleListing[] = [
     viewsCount: 410
   },
   {
-    id: 'sd-car-04',
+    id: '5daae4df-3611-43bb-802a-b54185cad96a',
     title: 'تويوتا هايس باص سياحي 14 راكب 2017',
     titleEn: 'Toyota HiAce 14-Seater Mini Bus 2017',
     make: 'تويوتا',
@@ -151,7 +151,7 @@ export const INITIAL_LISTINGS: VehicleListing[] = [
     viewsCount: 520
   },
   {
-    id: 'sd-car-05',
+    id: '794d2d55-94fd-4f34-a1f1-322d2e527692',
     title: 'تويوتا هايلوكس دبل كابين (بوكس) 2019',
     titleEn: 'Toyota Hilux Double Cab 4x4 2019',
     make: 'تويوتا',
@@ -188,7 +188,7 @@ export const INITIAL_LISTINGS: VehicleListing[] = [
     viewsCount: 380
   },
   {
-    id: 'sd-car-06',
+    id: '25f69576-b1b6-4550-8574-55f8848178a0',
     title: 'هيونداي كليك (جيتز) 2010 نظيفة جداً',
     titleEn: 'Hyundai Click / Getz 2010',
     make: 'هيونداي',
@@ -224,7 +224,7 @@ export const INITIAL_LISTINGS: VehicleListing[] = [
     viewsCount: 195
   },
   {
-    id: 'sd-car-07',
+    id: 'f9e586cf-2226-4c2d-8027-63c3cf3414c4',
     title: 'تويوتا كامري GLX 2015 فل أوبشن',
     titleEn: 'Toyota Camry GLX 2015 Full Option',
     make: 'تويوتا',
@@ -261,7 +261,7 @@ export const INITIAL_LISTINGS: VehicleListing[] = [
     viewsCount: 312
   },
   {
-    id: 'sd-car-08',
+    id: '6e85b45c-6f5f-4212-8f9f-fa3d8a181f2f',
     title: 'ميتسوبيشي كانتر دفار نقل بضائع 2014',
     titleEn: 'Mitsubishi Canter Cargo Truck (Dafar) 2014',
     make: 'ميتسوبيشي',
@@ -297,7 +297,7 @@ export const INITIAL_LISTINGS: VehicleListing[] = [
     viewsCount: 460
   },
   {
-    id: 'sd-car-09',
+    id: 'bd856ece-f261-4887-9aad-5a9e1a3210b0',
     title: 'تويوتا لاندكروزر برادو TXL 2017',
     titleEn: 'Toyota Land Cruiser Prado TXL 2017',
     make: 'تويوتا',
@@ -333,7 +333,7 @@ export const INITIAL_LISTINGS: VehicleListing[] = [
     viewsCount: 615
   },
   {
-    id: 'sd-car-10',
+    id: '2865ee0d-58a7-4e83-8747-955dcce22032',
     title: 'هيونداي جراند i10 موديل 2019',
     titleEn: 'Hyundai Grand i10 2019',
     make: 'هيونداي',
@@ -369,7 +369,7 @@ export const INITIAL_LISTINGS: VehicleListing[] = [
     viewsCount: 230
   },
   {
-    id: 'sd-car-11',
+    id: '35fee7a3-d77c-4562-a748-c85498d97f03',
     title: 'إيسوزو ديماكس دبل كابين 2018',
     titleEn: 'Isuzu D-Max Double Cab 4x4 2018',
     make: 'إيسوزو',
@@ -405,7 +405,7 @@ export const INITIAL_LISTINGS: VehicleListing[] = [
     viewsCount: 345
   },
   {
-    id: 'sd-car-12',
+    id: '41ff881e-56e5-46a3-9e70-75626147c20e',
     title: 'تويوتا فيتز 2014 اقتصادية',
     titleEn: 'Toyota Vitz 2014 Economic',
     make: 'تويوتا',
@@ -441,7 +441,7 @@ export const INITIAL_LISTINGS: VehicleListing[] = [
     viewsCount: 178
   },
   {
-    id: 'sd-car-13',
+    id: '6be8234c-38fa-4bdc-9d1d-8394563fe221',
     title: 'سوزوكي ألتو 2015 نظيفة جداً',
     titleEn: 'Suzuki Alto 2015',
     make: 'سوزوكي',
@@ -477,7 +477,7 @@ export const INITIAL_LISTINGS: VehicleListing[] = [
     viewsCount: 260
   },
   {
-    id: 'sd-car-14',
+    id: '80a0489a-a6ec-4979-af71-0b2c0668d9b0',
     title: 'تويوتا لاندكروزر 70 صالون (ساقية) 2016',
     titleEn: 'Toyota Land Cruiser 70 Hardtop 2016',
     make: 'تويوتا',
@@ -513,7 +513,7 @@ export const INITIAL_LISTINGS: VehicleListing[] = [
     viewsCount: 490
   },
   {
-    id: 'sd-car-15',
+    id: '8f1adc0d-fd74-4528-9466-39b044524494',
     title: 'كيا سيراتو 2018 بصمة وشاشة',
     titleEn: 'Kia Cerato 2018 Full Option',
     make: 'كيا',
@@ -549,7 +549,7 @@ export const INITIAL_LISTINGS: VehicleListing[] = [
     viewsCount: 310
   },
   {
-    id: 'sd-car-16',
+    id: '72f64578-436d-49d3-a6f8-fb20521e3d2c',
     title: 'نيسان أورفان باص ركاب 14 راكب 2016',
     titleEn: 'Nissan Urvan NV350 14-Seater 2016',
     make: 'نيسان',
@@ -585,7 +585,7 @@ export const INITIAL_LISTINGS: VehicleListing[] = [
     viewsCount: 390
   },
   {
-    id: 'sd-car-17',
+    id: '621ba7f9-9d7d-4016-98b2-66fc64a511ec',
     title: 'ميتسوبيشي L200 بوكس سينجل 2015',
     titleEn: 'Mitsubishi L200 Single Cab Pickup 2015',
     make: 'ميتسوبيشي',
@@ -621,7 +621,7 @@ export const INITIAL_LISTINGS: VehicleListing[] = [
     viewsCount: 275
   },
   {
-    id: 'sd-car-18',
+    id: 'a50f877b-eabd-4455-a930-ec7537eac34e',
     title: 'هيونداي أفانتي HD موديل 2011',
     titleEn: 'Hyundai Avante HD 2011',
     make: 'هيونداي',

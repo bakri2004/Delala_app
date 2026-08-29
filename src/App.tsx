@@ -6,6 +6,13 @@
 import React, { useState, useEffect } from 'react';
 import { ViewScreen, VehicleListing, UserAccount } from './types';
 import { INITIAL_LISTINGS } from './data/sampleListings';
+import {
+  supabase,
+  fetchListingsFromSupabase,
+  insertListingToSupabase,
+  getCurrentUserAccount,
+  signOutAccount,
+} from './lib/supabase';
 import { Navbar } from './components/Navbar';
 import { BrowseScreen } from './components/BrowseScreen';
 import { ListingDetailScreen } from './components/ListingDetailScreen';
@@ -16,35 +23,13 @@ import { CheckCircle2, ShieldCheck } from 'lucide-react';
 export default function App() {
   const [currentView, setCurrentView] = useState<ViewScreen>('browse');
   const [selectedListing, setSelectedListing] = useState<VehicleListing | null>(null);
-  const [listings, setListings] = useState<VehicleListing[]>(() => {
-    const saved = localStorage.getItem('dallala_car_listings_v2');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length >= INITIAL_LISTINGS.length) {
-          return parsed;
-        }
-      } catch (e) {
-        return INITIAL_LISTINGS;
-      }
-    }
-    return INITIAL_LISTINGS;
-  });
+  const [listings, setListings] = useState<VehicleListing[]>(INITIAL_LISTINGS);
+  const [isLoadingListings, setIsLoadingListings] = useState<boolean>(true);
   const [isArabic, setIsArabic] = useState<boolean>(true);
   const [notification, setNotification] = useState<string | null>(null);
 
-  // User Account state (separate optional path)
-  const [currentUser, setCurrentUser] = useState<UserAccount | null>(() => {
-    const savedUser = localStorage.getItem('dallala_user_account');
-    if (savedUser) {
-      try {
-        return JSON.parse(savedUser);
-      } catch (e) {
-        return null;
-      }
-    }
-    return null;
-  });
+  // User Account state powered by Supabase Authentication session
+  const [currentUser, setCurrentUser] = useState<UserAccount | null>(null);
   const [isSignUpModalOpen, setIsSignUpModalOpen] = useState(false);
 
   // Sync dir and lang on html root
@@ -53,10 +38,65 @@ export default function App() {
     document.documentElement.lang = isArabic ? 'ar' : 'en';
   }, [isArabic]);
 
-  // Save listings to localStorage
+  // Check active Supabase Auth session on load & listen for auth state changes
   useEffect(() => {
-    localStorage.setItem('dallala_car_listings_v2', JSON.stringify(listings));
-  }, [listings]);
+    let isMounted = true;
+
+    async function checkAuthSession() {
+      try {
+        const account = await getCurrentUserAccount();
+        if (isMounted && account) {
+          setCurrentUser(account);
+        }
+      } catch (err) {
+        console.error('Failed to get Supabase user session:', err);
+      }
+    }
+
+    checkAuthSession();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (!isMounted) return;
+      if (session?.user) {
+        const account = await getCurrentUserAccount();
+        if (isMounted) setCurrentUser(account);
+      } else {
+        if (isMounted) setCurrentUser(null);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+      authListener?.subscription?.unsubscribe();
+    };
+  }, []);
+
+  // Fetch all listings from Supabase on mount
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadSupabaseListings() {
+      try {
+        setIsLoadingListings(true);
+        const data = await fetchListingsFromSupabase();
+        if (isMounted && data && data.length > 0) {
+          setListings(data);
+        }
+      } catch (err) {
+        console.error('Failed to load listings from Supabase:', err);
+      } finally {
+        if (isMounted) {
+          setIsLoadingListings(false);
+        }
+      }
+    }
+
+    loadSupabaseListings();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const handleSelectListing = (listing: VehicleListing) => {
     setSelectedListing(listing);
@@ -69,33 +109,48 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleAddListing = (newListing: VehicleListing) => {
-    setListings((prev) => [newListing, ...prev]);
-    setSelectedListing(newListing);
-    setCurrentView('detail');
-    setNotification(
-      isArabic
-        ? 'تم نشر إعلان عربتك بنجاح على دلالة!'
-        : 'Your listing was published successfully on Dallala!'
-    );
+  const handleAddListing = async (newListing: VehicleListing) => {
+    try {
+      // Insert new listing row into Supabase 'listings' table
+      const savedListing = await insertListingToSupabase(newListing);
+      setListings((prev) => [savedListing, ...prev]);
+      setSelectedListing(savedListing);
+      setCurrentView('detail');
+      setNotification(
+        isArabic
+          ? 'تم حفظ ونشر إعلان عربتك بنجاح على قاعدة بيانات دلالة!'
+          : 'Your listing was saved and published successfully on Dallala!'
+      );
+    } catch (err) {
+      console.error('Error inserting listing to Supabase:', err);
+      // Resilient fallback so user flow is never disrupted
+      setListings((prev) => [newListing, ...prev]);
+      setSelectedListing(newListing);
+      setCurrentView('detail');
+      setNotification(
+        isArabic
+          ? 'تم نشر إعلان عربتك بنجاح!'
+          : 'Your listing was published successfully!'
+      );
+    }
+
     window.scrollTo({ top: 0, behavior: 'smooth' });
     setTimeout(() => setNotification(null), 4000);
   };
 
   const handleSignUpSuccess = (account: UserAccount) => {
     setCurrentUser(account);
-    localStorage.setItem('dallala_user_account', JSON.stringify(account));
     setNotification(
       isArabic
-        ? `أهلاً بك يا ${account.name}! تم حفظ حسابك بنجاح على منصة دلالة.`
-        : `Welcome ${account.name}! Your Dallala account is ready.`
+        ? `أهلاً بك يا ${account.name}! تم تسجيل الدخول بنجاح على منصة دلالة.`
+        : `Welcome ${account.name}! You are now signed in to Dallala.`
     );
     setTimeout(() => setNotification(null), 4500);
   };
 
-  const handleSignOut = () => {
+  const handleSignOut = async () => {
+    await signOutAccount();
     setCurrentUser(null);
-    localStorage.removeItem('dallala_user_account');
     setNotification(
       isArabic
         ? 'تم تسجيل الخروج بنجاح.'

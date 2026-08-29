@@ -23,11 +23,11 @@ export const ModalCloseButton: React.FC<ModalCloseButtonProps> = ({
       id={id}
       type="button"
       onClick={onClose}
-      className={`w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-xl bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 hover:text-slate-950 border border-slate-200/90 shadow-2xs transition-all cursor-pointer shrink-0 focus:outline-hidden focus:ring-2 focus:ring-emerald-700 ${className}`}
+      className={`w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-xl bg-emerald-800 hover:bg-emerald-900 active:bg-emerald-950 text-white border border-emerald-800 shadow-xs transition-all cursor-pointer shrink-0 focus:outline-hidden focus:ring-2 focus:ring-emerald-600 active:scale-95 ${className}`}
       aria-label={isArabic ? 'إغلاق (X)' : 'Close (X)'}
       title={isArabic ? 'إغلاق النافذة (Esc)' : 'Close overlay (Esc)'}
     >
-      <X className="w-5 h-5 stroke-[2.5]" />
+      <X className="w-5 h-5 stroke-[2.5] text-white" />
     </button>
   );
 };

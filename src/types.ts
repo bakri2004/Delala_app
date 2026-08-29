@@ -35,6 +35,7 @@ export interface VehicleListing {
 export type ViewScreen = 'browse' | 'detail' | 'post';
 
 export interface UserAccount {
+  id?: string;
   name: string;
   phone: string;
   city: string;

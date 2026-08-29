@@ -10,6 +10,11 @@ import {
 import { VehicleListing } from '../types';
 import { getWhatsAppUrl, formatCardPrice } from '../lib/formatters';
 import { ModalCloseButton } from './ModalCloseButton';
+import {
+  getOrCreateBuyerSessionId,
+  getConversationAndMessages,
+  saveChatMessage,
+} from '../lib/supabase';
 
 interface ChatMessage {
   id: string;
@@ -37,8 +42,10 @@ export const MessageSellerModal: React.FC<MessageSellerModalProps> = ({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Storage key specific to this vehicle listing
-  const storageKey = `dallala_chat_thread_${listing.id}`;
+  // Active Supabase conversation ID linking listing_id and buyer_session_id
+  const conversationIdRef = useRef<string | null>(null);
+  // Device buyer session ID from localStorage ('delala_buyer_session_id')
+  const buyerSessionIdRef = useRef<string>('');
 
   // Initial welcome message from seller
   const getInitialMessages = (): ChatMessage[] => {
@@ -60,50 +67,59 @@ export const MessageSellerModal: React.FC<MessageSellerModalProps> = ({
     ];
   };
 
-  const [messages, setMessages] = useState<ChatMessage[]>(() => {
-    try {
-      const saved = localStorage.getItem(storageKey);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed;
+  const [messages, setMessages] = useState<ChatMessage[]>(() => getInitialMessages());
+
+  // When chat opens or listing changes:
+  // 1. Get or generate UUID in localStorage as 'delala_buyer_session_id'
+  // 2. Query Supabase for existing conversation and messages
+  useEffect(() => {
+    if (!isOpen) return;
+
+    let isMounted = true;
+    const buyerSessionId = getOrCreateBuyerSessionId();
+    buyerSessionIdRef.current = buyerSessionId;
+
+    async function loadHistory() {
+      try {
+        const { conversationId, messages: dbMessages } = await getConversationAndMessages(
+          listing.id,
+          buyerSessionId
+        );
+
+        if (!isMounted) return;
+
+        conversationIdRef.current = conversationId;
+
+        if (dbMessages && dbMessages.length > 0) {
+          const formattedMessages: ChatMessage[] = dbMessages.map((m) => ({
+            id: m.id,
+            sender: m.sender_role,
+            text: m.content,
+            timestamp: new Date(m.created_at).toLocaleTimeString(isArabic ? 'ar-SD' : 'en-US', {
+              hour: '2-digit',
+              minute: '2-digit',
+            }),
+            status: 'read',
+          }));
+
+          setMessages([...getInitialMessages(), ...formattedMessages]);
+        } else {
+          setMessages(getInitialMessages());
+        }
+      } catch (err) {
+        console.error('Failed to load conversation history from Supabase:', err);
+        if (isMounted) {
+          setMessages(getInitialMessages());
         }
       }
-    } catch {
-      // ignore JSON parse error
     }
-    return getInitialMessages();
-  });
 
-  // Re-read or re-init when listing changes
-  useEffect(() => {
-    if (isOpen) {
-      try {
-        const saved = localStorage.getItem(storageKey);
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            setMessages(parsed);
-            return;
-          }
-        }
-      } catch {
-        // ignore
-      }
-      setMessages(getInitialMessages());
-    }
-  }, [isOpen, listing.id]);
+    loadHistory();
 
-  // Persist messages whenever they change
-  useEffect(() => {
-    if (messages.length > 0) {
-      try {
-        localStorage.setItem(storageKey, JSON.stringify(messages));
-      } catch {
-        // ignore storage error
-      }
-    }
-  }, [messages, storageKey]);
+    return () => {
+      isMounted = false;
+    };
+  }, [isOpen, listing.id, isArabic]);
 
   // Auto-scroll to bottom of chat thread
   const scrollToBottom = (smooth = true) => {
@@ -157,22 +173,56 @@ export const MessageSellerModal: React.FC<MessageSellerModalProps> = ({
       minute: '2-digit',
     });
 
+    const tempBuyerId = `buyer-msg-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
     const newBuyerMessage: ChatMessage = {
-      id: `buyer-msg-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      id: tempBuyerId,
       sender: 'buyer',
       text,
       timestamp: currentTime,
       status: 'sent',
     };
 
+    // Immediate optimistic UI update
     setMessages((prev) => [...prev, newBuyerMessage]);
     setInputText('');
 
-    // Simulate natural realistic seller response in the continuous thread
-    simulateSellerResponse(text);
+    const buyerSessionId = buyerSessionIdRef.current || getOrCreateBuyerSessionId();
+    buyerSessionIdRef.current = buyerSessionId;
+
+    // Save buyer message to Supabase
+    // If this is the first message on this listing, saveChatMessage creates a row
+    // in the 'conversations' table (linking listing_id and buyer_session_id),
+    // then inserts this message into the 'messages' table with sender_role 'buyer'.
+    const buyerSavePromise = saveChatMessage({
+      listingId: listing.id,
+      buyerSessionId,
+      senderRole: 'buyer',
+      content: text,
+      conversationId: conversationIdRef.current,
+    }).then((saveRes) => {
+      if (saveRes) {
+        conversationIdRef.current = saveRes.conversationId;
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === tempBuyerId
+              ? { ...m, id: saveRes.message.id, status: 'delivered' as const }
+              : m
+          )
+        );
+      }
+      return saveRes;
+    });
+
+    // Simulate natural realistic seller response in the continuous thread,
+    // and persist the seller reply in Supabase messages table too
+    simulateSellerResponse(text, buyerSessionId, buyerSavePromise);
   };
 
-  const simulateSellerResponse = (userText: string) => {
+  const simulateSellerResponse = (
+    userText: string,
+    buyerSessionId: string,
+    buyerSavePromise: Promise<any>
+  ) => {
     const lowerText = userText.toLowerCase();
 
     let replyText = isArabic
@@ -236,18 +286,19 @@ export const MessageSellerModal: React.FC<MessageSellerModalProps> = ({
         : `Engine, transmission, and AC are in great condition. You are fully welcome to bring any mechanic for inspection.`;
     }
 
-    // Show realistic typing indicator after 800ms, then deliver reply after 1800ms
+    // Show realistic typing indicator after 600ms, then deliver reply after 1400ms
     setTimeout(() => {
       setIsSellerTyping(true);
-      setTimeout(() => {
+      setTimeout(async () => {
         setIsSellerTyping(false);
         const replyTime = new Date().toLocaleTimeString(isArabic ? 'ar-SD' : 'en-US', {
           hour: '2-digit',
           minute: '2-digit',
         });
 
+        const tempSellerId = `seller-reply-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
         const sellerMsg: ChatMessage = {
-          id: `seller-reply-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+          id: tempSellerId,
           sender: 'seller',
           text: replyText,
           timestamp: replyTime,
@@ -261,6 +312,27 @@ export const MessageSellerModal: React.FC<MessageSellerModalProps> = ({
           );
           return [...updated, sellerMsg];
         });
+
+        // Store seller auto-reply in Supabase messages table with sender_role 'seller'
+        try {
+          await buyerSavePromise;
+          const sellerSaveRes = await saveChatMessage({
+            listingId: listing.id,
+            buyerSessionId,
+            senderRole: 'seller',
+            content: replyText,
+            conversationId: conversationIdRef.current,
+          });
+
+          if (sellerSaveRes) {
+            conversationIdRef.current = sellerSaveRes.conversationId;
+            setMessages((prev) =>
+              prev.map((m) => (m.id === tempSellerId ? { ...m, id: sellerSaveRes.message.id } : m))
+            );
+          }
+        } catch (err) {
+          console.error('Failed to save seller auto-reply to Supabase:', err);
+        }
       }, 1400);
     }, 600);
   };

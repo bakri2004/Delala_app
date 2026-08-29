@@ -216,20 +216,13 @@ export const SelectorOverlayModal: React.FC<SelectorOverlayModalProps> = ({
           )}
         </div>
 
-        {/* Footer info banner */}
-        <div className="px-4 py-2.5 bg-slate-50 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+        {/* Footer info banner (Cancel button removed, closing handled by distinct top X button) */}
+        <div className="px-4 py-2 bg-slate-50 border-t border-slate-100 flex items-center justify-center text-[11px] text-slate-400 font-medium">
           <span>
             {isArabic
               ? `${filteredOptions.length} خيار متوفر`
               : `${filteredOptions.length} options`}
           </span>
-          <button
-            type="button"
-            onClick={onClose}
-            className="font-bold text-slate-600 hover:text-slate-900 cursor-pointer"
-          >
-            {isArabic ? 'إلغاء' : 'Cancel'}
-          </button>
         </div>
       </div>
     </div>

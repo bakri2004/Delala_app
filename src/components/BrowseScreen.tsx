@@ -1,8 +1,8 @@
 import React, { useState, useMemo } from 'react';
-import { Search, X, MapPin, AlertCircle, Car, ChevronDown } from 'lucide-react';
+import { Search, X, MapPin, AlertCircle, ChevronDown } from 'lucide-react';
 import { VehicleListing } from '../types';
 import { ListingCard } from './ListingCard';
-import { CITIES_SUDAN, MAKES_LIST } from '../data/sampleListings';
+import { CITIES_SUDAN } from '../data/sampleListings';
 import { POST_FORM_CITIES } from './PostListingScreen';
 import { SelectorOverlayModal } from './SelectorOverlayModal';
 
@@ -25,15 +25,17 @@ export const BrowseScreen: React.FC<BrowseScreenProps> = ({
   const [selectedBodyType, setSelectedBodyType] = useState('الكل');
   const [pricePreset, setPricePreset] = useState<'all' | 'under15' | '15to25' | '25to40' | 'above40'>('all');
 
-  // Superimposed Overlay States for Make and City Selectors
+  // Superimposed Overlay State for City Selector
   const [isCityOverlayOpen, setIsCityOverlayOpen] = useState(false);
-  const [isMakeOverlayOpen, setIsMakeOverlayOpen] = useState(false);
 
-  // Quick Filter Categories (Sudanese favorite vehicle types)
+  // Quick Filter Categories (Sudanese favorite vehicle types and makes)
   const quickCategories = useMemo(() => [
     { id: 'all', labelAr: 'جميع الأنواع', labelEn: 'All Types', make: 'الكل', body: 'الكل' },
     { id: 'toyota', labelAr: 'تويوتا (Toyota)', labelEn: 'Toyota', make: 'تويوتا', body: 'الكل' },
     { id: 'hyundai', labelAr: 'هيونداي (Hyundai)', labelEn: 'Hyundai', make: 'هيونداي', body: 'الكل' },
+    { id: 'mitsubishi', labelAr: 'ميتسوبيشي (Mitsubishi)', labelEn: 'Mitsubishi', make: 'ميتسوبيشي', body: 'الكل' },
+    { id: 'nissan', labelAr: 'نيسان (Nissan)', labelEn: 'Nissan', make: 'نيسان', body: 'الكل' },
+    { id: 'kia', labelAr: 'كيا (Kia)', labelEn: 'Kia', make: 'كيا', body: 'الكل' },
     { id: 'public_trans', labelAr: 'شرايح وباصات ركاب', labelEn: 'Minibuses / HiAce', make: 'الكل', body: 'نقل ركاب (شريحة/هايس)' },
     { id: 'trucks', labelAr: 'بوكسات ودفارات', labelEn: 'Pickups & Box', make: 'الكل', body: 'بوكس / دبل كابين' },
     { id: 'sedan', labelAr: 'سيدان صالون', labelEn: 'Sedans', make: 'الكل', body: 'سيدان' },
@@ -183,35 +185,13 @@ export const BrowseScreen: React.FC<BrowseScreenProps> = ({
           )}
         </div>
 
-        {/* Quick Vehicle Type Pills + Make Selector */}
+        {/* Quick Vehicle Make & Type Pills */}
         <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto pb-1 scrollbar-none">
-          {/* Button to open Superimposed Make Selector Overlay Modal with top-left X button */}
-          <button
-            id="browse-make-overlay-btn"
-            type="button"
-            onClick={() => setIsMakeOverlayOpen(true)}
-            className={`whitespace-nowrap px-3 sm:px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold transition-all min-h-[36px] cursor-pointer shrink-0 flex items-center gap-1.5 ${
-              selectedMake !== 'الكل'
-                ? 'bg-emerald-800 text-white shadow-xs'
-                : 'bg-emerald-50 hover:bg-emerald-100/80 text-emerald-900 border border-emerald-800/20'
-            }`}
-          >
-            <Car className="w-3.5 h-3.5" />
-            <span>
-              {selectedMake !== 'الكل'
-                ? selectedMake
-                : isArabic
-                ? 'اختر الماركة...'
-                : 'Select Make...'}
-            </span>
-            <ChevronDown className="w-3.5 h-3.5 opacity-70" />
-          </button>
-
           {quickCategories.map((cat) => {
             const isActive =
               cat.id === 'all'
                 ? selectedMake === 'الكل' && selectedBodyType === 'الكل'
-                : selectedMake === cat.make || selectedBodyType === cat.body;
+                : selectedMake === cat.make || (cat.make === 'الكل' && selectedBodyType === cat.body);
 
             return (
               <button
@@ -347,49 +327,7 @@ export const BrowseScreen: React.FC<BrowseScreenProps> = ({
         </div>
       )}
 
-      {/* 1. Make Selector Overlay Modal with Top-Left X Close Button */}
-      <SelectorOverlayModal
-        id="browse-make-selector"
-        isOpen={isMakeOverlayOpen}
-        onClose={() => setIsMakeOverlayOpen(false)}
-        title={isArabic ? 'اختر ماركة السيارة (الشركة)' : 'Select Vehicle Make'}
-        subtitle={isArabic ? 'تصفية حسب شركة التصنيع' : 'Filter by vehicle manufacturer'}
-        icon={<Car className="w-5 h-5 text-emerald-800" />}
-        options={[
-          { value: 'الكل', label: isArabic ? 'جميع الماركات' : 'All Makes', sublabel: 'Show all' },
-          { value: 'تويوتا', label: 'تويوتا', sublabel: 'Toyota' },
-          { value: 'هيونداي', label: 'هيونداي', sublabel: 'Hyundai' },
-          { value: 'ميتسوبيشي', label: 'ميتسوبيشي', sublabel: 'Mitsubishi' },
-          { value: 'نيسان', label: 'نيسان', sublabel: 'Nissan' },
-          { value: 'كيا', label: 'كيا', sublabel: 'Kia' },
-          { value: 'سوزوكي', label: 'سوزوكي', sublabel: 'Suzuki' },
-          { value: 'إيسوزو', label: 'إيسوزو', sublabel: 'Isuzu' },
-          { value: 'مرسيدس بنز', label: 'مرسيدس بنز', sublabel: 'Mercedes-Benz' },
-          { value: 'بي إم دبليو', label: 'بي إم دبليو', sublabel: 'BMW' },
-          { value: 'هوندا', label: 'هوندا', sublabel: 'Honda' },
-          { value: 'فورد', label: 'فورد', sublabel: 'Ford' },
-          { value: 'شيفروليه', label: 'شيفروليه', sublabel: 'Chevrolet' },
-          { value: 'جيلي', label: 'جيلي', sublabel: 'Geely' },
-          { value: 'إم جي', label: 'إم جي', sublabel: 'MG' },
-          { value: 'شيري', label: 'شيري', sublabel: 'Chery' },
-          { value: 'بي واي دي', label: 'بي واي دي', sublabel: 'BYD' },
-          { value: 'شانجان', label: 'شانجان', sublabel: 'Changan' },
-          { value: 'هافال', label: 'هافال', sublabel: 'Haval' },
-          { value: 'لاند روفر', label: 'لاند روفر', sublabel: 'Land Rover' },
-        ]}
-        selectedValue={selectedMake}
-        onSelect={(val) => {
-          setSelectedMake(val);
-          if (val !== 'الكل') {
-            setSelectedBodyType('الكل');
-          }
-        }}
-        isArabic={isArabic}
-        searchPlaceholder={isArabic ? 'ابحث باسم الماركة (مثال: تويوتا، هيونداي)...' : 'Search makes...'}
-        columns={2}
-      />
-
-      {/* 2. City Selector Overlay Modal with Top-Left X Close Button */}
+      {/* City Selector Overlay Modal with Top-Left X Close Button */}
       <SelectorOverlayModal
         id="browse-city-selector"
         isOpen={isCityOverlayOpen}

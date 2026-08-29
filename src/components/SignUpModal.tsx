@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { UserPlus, LogIn, User, Phone, MapPin, Building2, CheckCircle2, AlertCircle, LogOut, ChevronDown } from 'lucide-react';
+import { UserPlus, LogIn, User, Phone, MapPin, Building2, CheckCircle2, AlertCircle, LogOut, ChevronDown, Loader2 } from 'lucide-react';
 import { UserAccount } from '../types';
 import { CITIES_SUDAN } from '../data/sampleListings';
 import { ModalCloseButton } from './ModalCloseButton';
 import { SelectorOverlayModal } from './SelectorOverlayModal';
+import { signUpWithPhone, signInWithPhone } from '../lib/supabase';
 
 interface SignUpModalProps {
   isOpen: boolean;
@@ -29,6 +30,7 @@ export const SignUpModal: React.FC<SignUpModalProps> = ({
   const [accountType, setAccountType] = useState<'individual' | 'dealer'>('individual');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCityOverlayOpen, setIsCityOverlayOpen] = useState(false);
 
   // Clean cities list (exclude 'الكل')
@@ -37,12 +39,13 @@ export const SignUpModal: React.FC<SignUpModalProps> = ({
   useEffect(() => {
     if (isOpen) {
       setError('');
+      setIsSubmitting(false);
     }
   }, [isOpen]);
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
@@ -56,21 +59,27 @@ export const SignUpModal: React.FC<SignUpModalProps> = ({
         return;
       }
 
-      const formattedPhone = phone.trim().startsWith('+249')
-        ? phone.trim()
-        : `+249 ${phone.trim().replace(/^0+/, '')}`;
-
-      const newAccount: UserAccount = {
+      setIsSubmitting(true);
+      const result = await signUpWithPhone({
         name: name.trim(),
-        phone: formattedPhone,
+        phone,
         city,
         accountType,
         password,
-        createdAt: new Date().toLocaleDateString(isArabic ? 'ar-SD' : 'en-US'),
-      };
+        isArabic,
+      });
 
-      onSignUpSuccess(newAccount);
-      onClose();
+      setIsSubmitting(false);
+
+      if (result.error) {
+        setError(result.error);
+        return;
+      }
+
+      if (result.account) {
+        onSignUpSuccess(result.account);
+        onClose();
+      }
     } else {
       // Login mode
       if (!phone.trim()) {
@@ -78,20 +87,24 @@ export const SignUpModal: React.FC<SignUpModalProps> = ({
         return;
       }
 
-      const formattedPhone = phone.trim().startsWith('+249')
-        ? phone.trim()
-        : `+249 ${phone.trim().replace(/^0+/, '')}`;
+      setIsSubmitting(true);
+      const result = await signInWithPhone({
+        phone,
+        password,
+        isArabic,
+      });
 
-      const loggedAccount: UserAccount = {
-        name: name.trim() || (isArabic ? 'صاحب الحساب' : 'Account Owner'),
-        phone: formattedPhone,
-        city,
-        accountType,
-        createdAt: new Date().toLocaleDateString(isArabic ? 'ar-SD' : 'en-US'),
-      };
+      setIsSubmitting(false);
 
-      onSignUpSuccess(loggedAccount);
-      onClose();
+      if (result.error) {
+        setError(result.error);
+        return;
+      }
+
+      if (result.account) {
+        onSignUpSuccess(result.account);
+        onClose();
+      }
     }
   };
 
@@ -260,9 +273,34 @@ export const SignUpModal: React.FC<SignUpModalProps> = ({
 
               {/* Error message */}
               {error && (
-                <div className="flex items-center gap-1.5 p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold">
-                  <AlertCircle className="w-4 h-4 shrink-0" />
-                  <span>{error}</span>
+                <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-bold space-y-2">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                    <span className="leading-snug">{error}</span>
+                  </div>
+                  {error.includes('تسجيل الدخول') || error.includes('Log In') ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMode('login');
+                        setError('');
+                      }}
+                      className="w-full py-1.5 px-3 rounded-lg bg-emerald-800 text-white text-xs font-bold hover:bg-emerald-900 transition-colors cursor-pointer"
+                    >
+                      {isArabic ? 'الانتقال إلى تسجيل الدخول مباشرة ←' : 'Switch to Log In →'}
+                    </button>
+                  ) : error.includes('إنشاء حساب') || error.includes('Sign Up') ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMode('signup');
+                        setError('');
+                      }}
+                      className="w-full py-1.5 px-3 rounded-lg bg-emerald-800 text-white text-xs font-bold hover:bg-emerald-900 transition-colors cursor-pointer"
+                    >
+                      {isArabic ? 'الانتقال إلى إنشاء حساب جديد ←' : 'Switch to Sign Up →'}
+                    </button>
+                  ) : null}
                 </div>
               )}
 
@@ -376,9 +414,23 @@ export const SignUpModal: React.FC<SignUpModalProps> = ({
                 <button
                   id="submit-signup-form-btn"
                   type="submit"
-                  className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-bold text-white bg-emerald-800 hover:bg-emerald-900 active:scale-98 shadow-xs transition-all cursor-pointer min-h-[44px]"
+                  disabled={isSubmitting}
+                  className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-bold text-white bg-emerald-800 hover:bg-emerald-900 active:scale-98 shadow-xs transition-all cursor-pointer min-h-[44px] disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                  {mode === 'signup' ? (
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>
+                        {mode === 'signup'
+                          ? isArabic
+                            ? 'جاري إنشاء الحساب...'
+                            : 'Creating Account...'
+                          : isArabic
+                          ? 'جاري تسجيل الدخول...'
+                          : 'Signing In...'}
+                      </span>
+                    </>
+                  ) : mode === 'signup' ? (
                     <>
                       <UserPlus className="w-4 h-4" />
                       <span>{isArabic ? 'إنشاء حساب جديد' : 'Create Account'}</span>
